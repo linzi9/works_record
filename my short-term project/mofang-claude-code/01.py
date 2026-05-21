@@ -113,7 +113,7 @@ def extract_text(content)-> str:
             texts.append(text)
     #.join() 是一个字符串方法，
     #用于将序列（如列表、元组等）中的元素连接成一个字符串。
-    return "\n".join(texts).strip
+    return "\n".join(texts).strip()
 
 #执行调用工具的命令
 def execute_tool_calls(response_content)-> list[dict]:
@@ -127,7 +127,7 @@ def execute_tool_calls(response_content)-> list[dict]:
         #$→ 命令行提示符
         #\033[0m:重置终端颜色
         print(f"\033[33m$ {command}\033[0m")
-        output=run_bash("command")
+        output=run_bash(command)
         print(output[:200])
         results.append({
             "type":"tool_result",
@@ -140,12 +140,12 @@ def execute_tool_calls(response_content)-> list[dict]:
 #执行工具命令函数；上下文消息列表中要加两次（角色、内容）
 def run_one_turn(state:LoopState)-> bool:
     #调用大模型，让它回复
-    response=client.message.create(
+    response=client.messages.create(
         model=MODEL,
         system=SYSTEM,
         messages=state.messages,
         tools=TOOLS,
-        max_token=8000,
+        max_tokens=8000,
     )
     state.messages.append({"role":"assistant","content":response.content})
 
@@ -176,7 +176,7 @@ if __name__ =="__main__":
             query=input("\033[36ms01 >> \033[0m")
         except (EOFError, KeyboardInterrupt):
             break
-        if query.strip.lower() in ("q","exit",""):
+        if query.strip().lower() in ("q","exit",""):
             break
 
         history.append({"role":"user","content":query})
