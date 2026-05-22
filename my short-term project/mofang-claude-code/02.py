@@ -35,7 +35,7 @@ def run_read(path:str,limit:int=None) -> str:
     try:
         #.read_text() 是 Python 内置标准库 pathlib 中 Path 对象的专属实例方法
         #一键读取文本文件的全部内容
-        text=safe_path(path).read_text
+        text=safe_path(path).read_text()
         #把一整段文本，按「换行符」切割成「元素是一行一行的列表」
         #输出：一个列表 lines，列表里的每一个元素 = 文本的一行
         lines=text.splitlines()
@@ -83,7 +83,7 @@ CONCURRENCY_UNSAFE = {"write_file", "edit_file"}
 
 TOOL_HANDLERS={
     "bash":      lambda **kw:run_bash(kw["command"]),
-    "read_file": lambda **kw:run_read(kw["path"],kw.get["limit"]),
+    "read_file": lambda **kw:run_read(kw["path"],kw.get("limit")),
     "write_file":lambda **kw:run_write(kw["path"],kw["content"]),
     "edit_file": lambda **kw: run_edit(kw["path"], kw["old_text"], kw["new_text"]),
 }
@@ -143,8 +143,8 @@ def normalize_messages(messages:list) -> list:
                 if isinstance(block,dict)
             ]
         else:
-            clean["content"]=msg.get("contnet","")
-    cleaned.append(clean)
+            clean["content"]=msg.get("content","")
+        cleaned.append(clean)
     # Collect existing tool_result IDs
 
     # 1. 创建一个空集合，用来存储【已存在的工具结果ID】
@@ -175,5 +175,18 @@ def normalize_messages(messages:list) -> list:
                      "content":"(cancelled)"}
                 ]})
 
+    # Merge consecutive same-role messages
     if not cleaned:
         return cleaned
+    merged=[cleaned[0]]
+    for msg in cleaned[1:]:
+        if msg["role"] == merged[-1]["role"]:
+            prev=merged[-1]
+            prev_c=prev["content"] if isinstance(prev["content"],list)\
+                else [{"type":"text","text":str(prev["content"])}]
+            curr_c=msg["content"] if isinstance(msg["content"],list)\
+                else [{"type":"text","text":str(msg["content"])}]
+            prev["content"]=prev_c+curr_c
+        else:
+            merged.append(msg)
+    return merged
